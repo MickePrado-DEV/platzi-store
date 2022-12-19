@@ -1,15 +1,25 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-
+import { AppModule } from './app.module';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // Elimina los datos que no estan definidos en el DTO
-      forbidNonWhitelisted: true, // sirve para mandar la alerta sobre los campos que no estan en el DTO
-    }), // Para validar los datos que se envian al servidor
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
   );
-  await app.listen(3000);
+
+  const config = new DocumentBuilder()
+    .setTitle('API')
+    .setDescription('Platzi Store API description')
+    .setVersion('1.0')
+    // .addTag('cats')
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('docs', app, document);
+  app.enableCors();
+  await app.listen(process.env.PORT || 3000);
 }
 bootstrap();

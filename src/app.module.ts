@@ -1,25 +1,54 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config'; // A way to register the ConfigModule with a custom configuration.
+import * as Joi from 'joi';
+
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ProductsController } from './controllers/products/products.controller';
-import { CategoriesController } from './controllers/categories/categories.controller';
-import { ProductsService } from './services/products/products.service';
-import { CategoriesService } from './services/categories/categories.service';
-import { BrandController } from './brands/brand/brand.controller';
-import { CustomersController } from './services/customers/customers.controller';
-import { BrandsController } from './services/brands/brands.controller';
-import { UsersController } from './services/users/users.controller';
-import { UsersController } from './controllers/users/users.controller';
-import { CustomersController } from './controllers/customers/customers.controller';
-import { BrandsController } from './controllers/brands/brands.controller';
-import { BrandController } from './controllers/brand/brand.controller';
-import { BrandController } from './controllers/brands/brand/brand.controller';
-import { BrandController } from './src/brands/brand/brand.controller';
-import { BrandController } from './brands/brand/brand.controller';
+import { UsersModule } from './users/users.module';
+import { ProductsModule } from './products/products.module';
+import { HttpModule, HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
+import { DatabaseModule } from './database/database.module';
+
+import { environments } from './environments';
+import config from './config';
 
 @Module({
-  imports: [],
-  controllers: [AppController, ProductsController, CategoriesController, BrandController, BrandsController, CustomersController, UsersController],
-  providers: [AppService, ProductsService, CategoriesService],
+  imports: [
+    ConfigModule.forRoot({
+      envFilePath: environments.dev,
+      load: [config],
+      isGlobal: true,
+      validationSchema: Joi.object({
+        API_KEY: Joi.number().required(),
+        DATABASE_NAME: Joi.string().required(),
+        DATABASE_PORT: Joi.number().required(),
+      }),
+    }),
+    UsersModule,
+    ProductsModule,
+    HttpModule.registerAsync({
+      useFactory: () => ({
+        timeout: 5000,
+        maxRedirects: 5 /* A way to register the HttpModule with a custom configuration. */,
+      }),
+    }),
+    DatabaseModule,
+  ],
+  controllers: [AppController],
+  providers: [
+    AppService,
+    {
+      provide: 'TASKS',
+      inject: [HttpService],
+      useFactory: async (http: HttpService) => {
+        const task = await http.get(
+          'https://jsonplaceholder.typicode.com/todos',
+        );
+        const value = Promise.resolve(firstValueFrom(task));
+        return value;
+      },
+    },
+  ],
 })
 export class AppModule {}

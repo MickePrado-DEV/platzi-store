@@ -12,8 +12,6 @@ import { DatabaseModule } from './database/database.module';
 
 import { environments } from './environments';
 import config from './config';
-console.log('NODE_ENV: =========== ', process.env.NODE_ENV);
-console.log('environments: =========== ', environments[process.env.NODE_ENV]);
 
 @Module({
   imports: [
